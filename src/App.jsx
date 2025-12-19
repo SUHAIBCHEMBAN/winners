@@ -1,10 +1,21 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import AdminLogin from './pages/AdminLogin';
 import AdminPanel from './pages/AdminPanel';
+import useStore from './store/useStore';
 
 function App() {
+  const subscribeToResults = useStore((state) => state.subscribeToResults);
+
+  useEffect(() => {
+    // Start listening to Firebase real-time updates
+    const unsubscribe = subscribeToResults();
+    // Cleanup on unmount
+    return () => unsubscribe();
+  }, [subscribeToResults]);
+
   return (
     <Router>
       <div className="app">
@@ -22,7 +33,7 @@ function App() {
 }
 
 // Wrapper to decide whether to show Login or Panel
-import useStore from './store/useStore';
+
 
 const AdminPanelOrLogin = () => {
   const isAuthenticated = useStore((state) => state.isAuthenticated);

@@ -1,65 +1,140 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { db } from '../lib/firebase';
+import {
+    collection,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    orderBy
+} from 'firebase/firestore';
 
 const useStore = create(
     persist(
         (set, get) => ({
-            // Published results
+            // State
             results: [],
-
-            // Admin authentication
             isAuthenticated: false,
+            isFirebaseActive: !!db,
 
-            // Add a new result
-            addResult: (result) => {
+            // --- Actions ---
+
+            // Listen for Real-time Updates (Firebase Only)
+            subscribeToResults: () => {
+                if (!db) return () => { };
+
+                console.log('Subscribing to real-time updates...');
+                const q = query(collection(db, 'results'), orderBy('timestamp', 'desc'));
+
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const fetchedResults = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    set({ results: fetchedResults });
+                }, (error) => {
+                    console.error("Error fetching updates:", error);
+                });
+
+                return unsubscribe;
+            },
+
+            // Add Result
+            addResult: async (result) => {
                 const newResult = {
                     ...result,
-                    id: `result_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     timestamp: new Date().toISOString(),
                 };
-                set((state) => ({
-                    results: [newResult, ...state.results],
-                }));
+
+                if (db) {
+                    try {
+                        // Firestore generates unique ID automatically
+                        await addDoc(collection(db, 'results'), newResult);
+                    } catch (e) {
+                        console.error("Error adding document: ", e);
+                        alert("Failed to save to cloud. Check console.");
+                    }
+                } else {
+                    // Local Storage Fallback
+                    const localResult = {
+                        ...newResult,
+                        id: `result_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    };
+                    set((state) => ({
+                        results: [localResult, ...state.results],
+                    }));
+                }
             },
 
-            // Edit an existing result
-            editResult: (id, updatedData) => {
-                set((state) => ({
-                    results: state.results.map((result) =>
-                        result.id === id
-                            ? { ...result, ...updatedData, editedAt: new Date().toISOString() }
-                            : result
-                    ),
-                }));
-            },
-
-            // Delete a result
-            deleteResult: (id) => {
-                set((state) => ({
-                    results: state.results.filter((result) => result.id !== id),
-                }));
-            },
-
-            // Get team scores
-            getTeamScores: () => {
-                const results = get().results;
-                const scores = {
-                    team1: 0,
-                    team2: 0,
+            // Edit Result
+            editResult: async (id, updatedData) => {
+                const dataPayload = {
+                    ...updatedData,
+                    editedAt: new Date().toISOString()
                 };
 
+                if (db) {
+                    try {
+                        const resultRef = doc(db, 'results', id);
+                        await updateDoc(resultRef, dataPayload);
+                    } catch (e) {
+                        console.error("Error updating document: ", e);
+                    }
+                } else {
+                    set((state) => ({
+                        results: state.results.map((result) =>
+                            result.id === id ? { ...result, ...dataPayload } : result
+                        ),
+                    }));
+                }
+            },
+
+            // Delete Result
+            deleteResult: async (id) => {
+                if (db) {
+                    try {
+                        await deleteDoc(doc(db, 'results', id));
+                    } catch (e) {
+                        console.error("Error deleting document: ", e);
+                    }
+                } else {
+                    set((state) => ({
+                        results: state.results.filter((result) => result.id !== id),
+                    }));
+                }
+            },
+
+            // Clear All
+            clearAllResults: async () => {
+                if (db) {
+                    // Deleting collection is complex in client SDK, usually requires cloud function
+                    // or iterating. We'll iterate for simplicity of this fest app.
+                    const results = get().results;
+                    results.forEach(async (r) => {
+                        await deleteDoc(doc(db, 'results', r.id));
+                    });
+                } else {
+                    set({ results: [] });
+                }
+            },
+
+            // --- Utilities (Same as before) ---
+
+            getTeamScores: () => {
+                const results = get().results;
+                const scores = { team1: 0, team2: 0 };
                 results.forEach((result) => {
                     if (result.teamId && result.points) {
                         scores[result.teamId] = (scores[result.teamId] || 0) + result.points;
                     }
                 });
-
                 return scores;
             },
 
-            // Authentication
             login: (password) => {
-                // Hardcoded password - in production, use environment variable
                 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'Madin_Shuhada@admin';
                 if (password === ADMIN_PASSWORD) {
                     set({ isAuthenticated: true });
@@ -72,7 +147,6 @@ const useStore = create(
                 set({ isAuthenticated: false });
             },
 
-            // Export results as JSON
             exportResults: () => {
                 const results = get().results;
                 const dataStr = JSON.stringify(results, null, 2);
@@ -85,12 +159,23 @@ const useStore = create(
                 URL.revokeObjectURL(url);
             },
 
-            // Import results from JSON
             importResults: (jsonData) => {
                 try {
                     const parsedData = JSON.parse(jsonData);
                     if (Array.isArray(parsedData)) {
-                        set({ results: parsedData });
+                        // For import, we might want to batch write to Firebase if connected
+                        // But for safety/simplicity, let's keep import local-only behavior OR
+                        // iterate write (slow but works).
+                        if (db) {
+                            if (!window.confirm("You are importing to the LIVE CLOUD DATABASE. This will add all entries. Continue?")) return false;
+                            parsedData.forEach(async (item) => {
+                                // Remove ID collision risk
+                                const { id, ...cleanItem } = item;
+                                await addDoc(collection(db, 'results'), cleanItem);
+                            });
+                        } else {
+                            set({ results: parsedData });
+                        }
                         return true;
                     }
                     return false;
@@ -99,15 +184,11 @@ const useStore = create(
                     return false;
                 }
             },
-
-            // Clear all results
-            clearAllResults: () => {
-                set({ results: [] });
-            },
         }),
         {
             name: 'fest-results-storage',
             partialize: (state) => ({
+                // Even if using Firebase, we cache results locally for speed/offline
                 results: state.results,
                 isAuthenticated: state.isAuthenticated,
             }),
