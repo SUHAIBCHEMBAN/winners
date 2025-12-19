@@ -1,6 +1,6 @@
-# Islamic Fest Result App
+# Fest Result App
 
-A React-based web application for publishing and viewing Islamic Arts Fest results in real-time.
+A React-based web application for publishing and viewing Arts Fest results in real-time.
 
 ## Features
 
