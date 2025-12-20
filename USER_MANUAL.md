@@ -1,103 +1,75 @@
-# Fest Results App - User Manual
+# 📘 Sztuka '26 - User Manual
 
-Welcome to the Fest Results Application! This manual provides a complete guide for both Administrators and Public Users, along with important technical details about how the application handles data.
-
----
-
-## ⚠️ Important Note: How Data Works
-
-**Please read this carefully regarding your "Real-time" question.**
-
-This application currently uses **Local Storage** (browser memory) to save data. This means:
-1.  **Data is NOT shared across devices:** Results published on your laptop will **NOT** automatically appear on someone else's phone.
-2.  **Unique to each Browser:** If you open the app on Chrome and then on Safari on the same computer, they will have separate data.
-3.  **Real-time Refresh:** The "Auto-refresh" feature currently restarts the local timer to check for *local* updates (e.g., if you have the app open in two tabs on the same browser). It does **not** fetch data from a server.
-
-### How to share results with the public?
-Since there is no backend database connected yet, to show results to others, you currently have two options:
-1.  **Projector/Screen Mode:** Use one main computer connected to a screen to enter and display results.
-2.  **Export/Import (Manual Sync):**
-    *   **Admin:** Go to Dashboard -> Click **Export Results** (downloads a `.json` file).
-    *   **User/Other Device:** Go to Dashboard -> Click **Import Results** -> Upload that file.
-    *(This is obviously not ideal for a public website. To have true real-time syncing for everyone, we would need to connect a database like Firebase or Supabase.)*
+Welcome to the **Sztuka '26 Arts Fest** results system! This guide will help you understand how to use the application, whether you are a visitor checking scores or an organizer managing the event.
 
 ---
 
-## 👨‍💻 Admin Guide
+## 👥 For Visitors & Participants (Public View) https://festresults.vercel.app/
 
-### 1. Accessing the Admin Panel
-*   **URL:** Navigate to `https://your-site.vercel.app/admin` (e.g., `/admin`).
-*   **Note:** There is no button on the homepage for this; you must type the URL manually.
+This is what everyone sees when they open the app. No login is required.
 
-### 2. Login
-*   **Password:** `Madin_Shuhada@admin`
-*   Enter the password and click "Login to Admin Panel".
+### 1. 🏠 Home Page Dashboard
+*   **Live Scoreboard:** At the top, you will see the **"Team Standings"**. This shows which team is currently leading the competition.
+    *   The 🏆 icon shows the 1st place team.
+    *   Scores update automatically every 30 seconds.
+*   **Latest Statistics:** You can see exactly how many results have been published so far.
+*   **Refresh Button:** If you want to check for new results immediately, click the **"Refresh"** button (rotating arrow icon).
 
-### 3. The Dashboard
-*   **Stats Cards:** View total results, team scores (Team Badr vs Team Uhud), and program coverage.
-*   **Action Buttons:**
-    *   **Publish Result:** Opens the form to add a new win.
-    *   **Logout:** Securely logs you out (top right).
-    *   **Export/Import:** For backing up or transferring data.
-    *   **Clear All:** Delete all results (Danger Zone).
+### 2. 📋 Viewing Results
+Below the scoreboard is the list of published results.
+*   **Gallery View (E-Poster):** By default, results appear as beautiful digital posters. This is great for sharing screenshots!
+*   **List View:** If you prefer a simple list, click the **List Icon** (lines) at the top right of the results section.
+*   **Compare:** Toggle between the Grid (Poster) and List icons to see which view you prefer.
 
-### 4. Publishing a Result
-1.  Click **"Publish Result"**.
-2.  **Select Program:** Choose from the list (Quran Recitation, Speech, etc.).
-3.  **Select Participant:** Choose the student (Category/Class is auto-shown).
-    *   *Note:* Team is auto-selected based on the participant.
-4.  **Enter Points:** (1-1000).
-5.  **Select Position:** 1st, 2nd, 3rd, or Participation.
-6.  **Select Grade:** A+, A, B+, etc.
+### 3. 🔍 Finding Specific Results
+Click the **"Filters"** button to open search options:
+*   **Search:** Type a name, program, or team to find it instantly.
+*   **Category:** Filter by category (e.g., HS, Junior, Senior).
+*   **Team:** See results for a specific team only.
+*   **Sort By:** Arrange results by "Highest Points", "Newest", etc.
+
+---
+
+## 🔐 For Admins & Organizers (Admin Panel) https://festresults.vercel.app/admin
+
+This section is for the organizers who need to enter data and publish results.
+**Access:** Go to the `/admin` link (e.g., `https://festresults.vercel.app/admin`) and log in with the secret password.
+
+### 1. 📢 Publishing Results (The Main Task)
+Go to the **"Results"** tab.
+1.  Click the big green **"Publish New Result"** button.
+2.  **Select Program:** Choose the event (e.g., "Quran Recitation").
+3.  **Select Participant:** Choose who won. The system will automatically know which Team they belong to.
+4.  **Enter Points:** Type the score they got.
+5.  **Select Grade:** Choose their grade (A, B, etc.).
+6.  **Select Position:** Are they 1st, 2nd, 3rd, or just participating?
 7.  Click **"Publish Result"**.
+    *   *Result:* The scoreboard updates instantly for everyone!
 
-### 5. Managing Results
-*   Scroll down to the "Recent Results" list.
-*   **Edit:** Click the pencil icon to modify points, grade, or position.
-*   **Delete:** Click the trash icon to remove a result.
+### 2. ✏️ Managing Programs (Events)
+Go to the **"Programs"** tab to set up your events.
+*   **Add New:** Click "Add Program", give it a name (e.g., "Pencil Drawing"), category, and max points.
+*   **Edit:** Made a spelling mistake? Click the **Pencil Icon** next to a program to fix it.
+*   **Delete:** Click the **Trash Icon** to remove a program (be careful!).
 
----
+### 3. 👥 Managing Participants (Students)
+Go to the **"Participants"** tab.
+*   **Add New:** Click "Add Participant", enter their Name, choose their Team, and Category.
+*   **Search:** Use the search bar to find a specific student quickly if you need to edit their details.
 
-## 👥 Public User Guide
+### 4. 🚩 Managing Teams
+Go to the **"Teams"** tab.
+*   Here you can rename teams or change their colors.
+*   The scores are calculated automatically based on the Results you publish, so you **don't** need to enter total team scores manually.
 
-### 1. The Home Page
-*   **URL:** `https://your-site.vercel.app/`
-*   **Hero Section:** Shows total results count.
-*   **Auto-Refresh:** The page refreshes its view every 30 seconds (useful if used as a static display).
-
-### 2. Live Scoreboard
-*   Shows the header-to-head score of **Team Badr** vs **Team Uhud**.
-*   The leading team card glows and scales up slightly.
-*   Includes a progress bar visualization.
-
-### 3. Viewing Results
-*   **List View:** Scroll down to see cards for every published result.
-*   **Badges:** See Position (1st/2nd/3rd) and Grade (A+/A) clearly.
-*   **Search & Filter:**
-    *   Click the **Filters** button.
-    *   **Search:** Type a name, program, or category (e.g., "UP", "HS", "Rizwan").
-    *   **Category:** Filter by On-Stage / Off-Stage.
-    *   **Team:** Filter by Team Badr or Team Uhud.
-    *   **Sort:** Sort by Points (High/Low) or Grade.
+### 5. ⚙️ Settings & Tools
+Go to the **"Settings"** tab for special tools:
+*   **Backup Data:** Click "Export Full Backup" to save a copy of all your hard work to your computer. (Do this at the end of each day!).
+*   **Seed Database:** ( Technical) This reset button loads the initial starting data. **Only use this if you are setting up the app for the very first time**, as it can overwrite changes.
 
 ---
 
-## 🚀 Deployment & Updates
-
-### 404 Error on Refresh
-If you see a "404 Not Found" error when refreshing the `/admin` page on Vercel:
-*   Ensure the `vercel.json` file exists in your project root with the following content:
-    ```json
-    {
-      "rewrites": [
-        { "source": "/(.*)", "destination": "/index.html" }
-      ]
-    }
-    ```
-*   Push this file to your Git repository to redeploy.
-
-### Updating Data
-To change Team names, Participants, or Programs:
-1.  Edit the files in `src/data/`.
-2.  Commit and Push changes to GitHub.
-3.  Vercel will automatically redeploy the update.
+### 💡 Tips for Success
+*   **Double Check:** Before publishing a result, check that the "Max Points" for that program matches your score sheet.
+*   **Auto-Save:** The system saves data automatically. If you lose internet, the data stays on your device until you reconnect.
+*   **Screenshots:** The "Gallery View" is perfect for taking screenshots to share on WhatsApp or Social Media status updates!

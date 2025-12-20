@@ -37,9 +37,10 @@ const Home = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="hero-title">🎉 Fest Results 2025</h1>
+          <h1 className="hero-title">Sztuka '26</h1>
+          <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)', marginBottom: '1rem' }}>5th Edition Arts Fest</h2>
           <p className="hero-subtitle">
-            Live results and scores from our annual fest competition
+            "Design the Future"
           </p>
           <div className="hero-stats">
             <div className="hero-stat">

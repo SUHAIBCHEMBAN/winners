@@ -1,20 +1,20 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, SortAsc, Award, Calendar, User, Trophy, X } from 'lucide-react';
+import { Search, Filter, SortAsc, Award, Calendar, User, Trophy, X, LayoutGrid, List as ListIcon, Medal } from 'lucide-react';
 import useStore from '../store/useStore';
-import { teams } from '../data/teams';
-import { programs, categories } from '../data/programs';
-import { participants } from '../data/participants';
+import { categories } from '../data/programs';
 import { format } from 'date-fns';
 import './ResultsList.css';
+import './ResultPoster.css';
 
 const ResultsList = () => {
-  const results = useStore((state) => state.results);
+  const { results, teams, programs, participants } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState('gallery'); // Default to 'gallery' as per user interest
 
   const filteredAndSortedResults = useMemo(() => {
     let filtered = [...results];
@@ -66,7 +66,7 @@ const ResultsList = () => {
     });
 
     return filtered;
-  }, [results, searchQuery, selectedCategory, selectedTeam, sortBy]);
+  }, [results, programs, participants, searchQuery, selectedCategory, selectedTeam, sortBy]);
 
   const getGradeColor = (grade) => {
     const gradeColors = {
@@ -80,6 +80,22 @@ const ResultsList = () => {
     };
     return gradeColors[grade] || '#94a3b8';
   };
+
+  const getRankIcon = (place) => {
+      const p = place?.toLowerCase();
+      if (p?.includes('1st')) return <Medal size={32} />;
+      if (p?.includes('2nd')) return <Medal size={28} />;
+      if (p?.includes('3rd')) return <Medal size={28} />;
+      return <Award size={24} />;
+  }
+
+  const getRankClass = (place) => {
+      const p = place?.toLowerCase();
+      if (p?.includes('1st')) return 'rank-1st';
+      if (p?.includes('2nd')) return 'rank-2nd';
+      if (p?.includes('3rd')) return 'rank-3rd';
+      return 'rank-participation';
+  }
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -99,17 +115,55 @@ const ResultsList = () => {
           <span className="results-count">{filteredAndSortedResults.length}</span>
         </div>
 
-        <button
-          className="btn btn-outline filter-toggle"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={18} />
-          <span>Filters</span>
-          {hasActiveFilters && <span className="filter-badge">{
-            [searchQuery, selectedCategory !== 'all', selectedTeam !== 'all', sortBy !== 'recent']
-              .filter(Boolean).length
-          }</span>}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+             {/* View Toggle */}
+            <div className="view-toggle" style={{ display: 'flex', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-color)' }}>
+                <button 
+                    className={`btn-icon ${viewMode === 'list' ? 'active' : ''}`}
+                    onClick={() => setViewMode('list')}
+                    style={{ 
+                        padding: '0.4rem', 
+                        background: viewMode === 'list' ? 'white' : 'transparent',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: viewMode === 'list' ? 'var(--primary)' : 'var(--text-secondary)',
+                        boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                    title="List View"
+                >
+                    <ListIcon size={18} />
+                </button>
+                <button 
+                    className={`btn-icon ${viewMode === 'gallery' ? 'active' : ''}`}
+                    onClick={() => setViewMode('gallery')}
+                    style={{ 
+                        padding: '0.4rem', 
+                        background: viewMode === 'gallery' ? 'white' : 'transparent',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: viewMode === 'gallery' ? 'var(--primary)' : 'var(--text-secondary)',
+                        boxShadow: viewMode === 'gallery' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                    title="Gallery View (E-Poster)"
+                >
+                    <LayoutGrid size={18} />
+                </button>
+            </div>
+
+            <button
+            className="btn btn-outline filter-toggle"
+            onClick={() => setShowFilters(!showFilters)}
+            >
+            <Filter size={18} />
+            <span>Filters</span>
+            {hasActiveFilters && <span className="filter-badge">{
+                [searchQuery, selectedCategory !== 'all', selectedTeam !== 'all', sortBy !== 'recent']
+                .filter(Boolean).length
+            }</span>}
+            </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -207,12 +261,13 @@ const ResultsList = () => {
         )}
       </AnimatePresence>
 
-      {/* Results List */}
-      <div className="results-list">
+      {/* Results List / Gallery */}
+      <div className={viewMode === 'gallery' ? 'results-gallery' : 'results-list'}>
         <AnimatePresence mode="popLayout">
           {filteredAndSortedResults.length === 0 ? (
             <motion.div
               className="no-results"
+              style={{ gridColumn: '1 / -1' }} /* Span full width grid */
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -227,6 +282,61 @@ const ResultsList = () => {
               const program = programs.find((p) => p.id === result.programId);
               const team = teams.find((t) => t.id === result.teamId);
 
+              if (viewMode === 'gallery') {
+                  // Gallery / E-Poster View
+                  return (
+                      <motion.div
+                        key={result.id}
+                        className="result-poster"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: index * 0.05 }}
+                        layout
+                      >
+                         <div className="poster-header">
+                             <div className="poster-program">{program?.name || 'Unknown Program'}</div>
+                             <span className="poster-category-badge">{program?.category}</span>
+                             
+                             <div className={`poster-rank-container ${getRankClass(result.place)}`}>
+                                 {getRankIcon(result.place)}
+                             </div>
+                         </div>
+                         
+                         <div className="poster-body">
+                             <div style={{ marginTop: '1.5rem' }}>
+                                 <h3 className="poster-participant-name">{participant?.name || 'Unknown'}</h3>
+                                 <p className="poster-participant-details">{participant?.category}</p>
+                                 <div 
+                                    className="poster-team-badge" 
+                                    style={{ background: team?.color || '#999', boxShadow: `0 4px 10px ${team?.color}40` }}
+                                 >
+                                     {team?.name || 'Unknown Team'}
+                                 </div>
+                             </div>
+                             
+                             <div className="poster-deco-circle"></div>
+                         </div>
+
+                         <div className="poster-footer">
+                             <div className="poster-stat">
+                                 <span className="stat-label">Grade</span>
+                                 <span className="stat-value" style={{ color: getGradeColor(result.grade) }}>{result.grade}</span>
+                             </div>
+                              <div className="poster-stat">
+                                 <span className="stat-label">Points</span>
+                                 <span className="stat-value">{result.points}</span>
+                             </div>
+                              <div className="poster-stat">
+                                 <span className="stat-label">Time</span>
+                                 <span className="stat-value" style={{ fontSize: '0.65rem', color: '#999' }}>{format(new Date(result.timestamp), 'h:mm a')}</span>
+                             </div>
+                         </div>
+                      </motion.div>
+                  )
+              }
+
+              // List View Card (Existing)
               return (
                 <motion.div
                   key={result.id}
@@ -241,7 +351,7 @@ const ResultsList = () => {
                     <div className="result-participant">
                       <User className="participant-icon" />
                       <div>
-                        <h3 className="participant-name">{participant?.name}</h3>
+                        <h3 className="participant-name">{participant?.name || 'Unknown'}</h3>
                         <p className="participant-class">{participant?.category}</p>
                       </div>
                     </div>
@@ -261,15 +371,15 @@ const ResultsList = () => {
                   <div className="result-body">
                     <div className="result-info">
                       <span className="info-label">Program</span>
-                      <span className="info-value">{program?.name}</span>
+                      <span className="info-value">{program?.name || 'Unknown Program'}</span>
                     </div>
                     <div className="result-info">
                       <span className="info-label">Team</span>
                       <span
                         className="team-badge"
-                        style={{ '--team-color': team?.color }}
+                        style={{ '--team-color': team?.color || '#ccc' }}
                       >
-                        {team?.name}
+                        {team?.name || 'Unknown Team'}
                       </span>
                     </div>
                     <div className="result-info">

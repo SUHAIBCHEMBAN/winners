@@ -1,25 +1,41 @@
 import { motion } from 'framer-motion';
 import { Trophy, TrendingUp } from 'lucide-react';
-import { teams } from '../data/teams';
 import useStore from '../store/useStore';
 import './TeamScoreboard.css';
 
 const TeamScoreboard = () => {
-  const getTeamScores = useStore((state) => state.getTeamScores);
-  const scores = getTeamScores();
+  const teams = useStore((state) => state.teams);
+  const results = useStore((state) => state.results);
 
-  const totalPoints = scores.team1 + scores.team2;
-  const team1Percentage = totalPoints > 0 ? (scores.team1 / totalPoints) * 100 : 50;
-  const team2Percentage = totalPoints > 0 ? (scores.team2 / totalPoints) * 100 : 50;
+  // Calculate scores dynamically
+  const scores = {};
+  teams.forEach(t => scores[t.id] = 0);
+  
+  results.forEach((result) => {
+      if (result.teamId && result.points) {
+          scores[result.teamId] = (scores[result.teamId] || 0) + result.points;
+      }
+  });
 
-  const leader = scores.team1 > scores.team2 ? teams[0] : scores.team2 > scores.team1 ? teams[1] : null;
+  const totalPoints = Object.values(scores).reduce((a, b) => a + b, 0);
+  
+  // Find leader
+  let leader = null;
+  let maxScore = -1;
+  teams.forEach(t => {
+      if (scores[t.id] > maxScore) {
+          maxScore = scores[t.id];
+          leader = t;
+      }
+  });
+  if (totalPoints === 0 || maxScore === 0) leader = null;
 
   return (
     <div className="scoreboard-container">
       <div className="scoreboard-header">
         <Trophy className="scoreboard-icon" />
         <h2>Live Scoreboard</h2>
-        {leader && (
+        {leader && totalPoints > 0 && (
           <motion.div
             className="leader-badge"
             initial={{ scale: 0 }}
@@ -35,7 +51,7 @@ const TeamScoreboard = () => {
       <div className="scoreboard-grid">
         {teams.map((team, index) => {
           const teamScore = scores[team.id] || 0;
-          const percentage = team.id === 'team1' ? team1Percentage : team2Percentage;
+          const percentage = totalPoints > 0 ? (teamScore / totalPoints) * 100 : 0;
           const isLeading = leader && leader.id === team.id;
 
           return (
@@ -47,7 +63,7 @@ const TeamScoreboard = () => {
               transition={{ delay: index * 0.1 }}
               style={{
                 '--team-color': team.color,
-                '--team-gradient': team.gradient,
+                '--team-gradient': team.gradient || `linear-gradient(135deg, ${team.color} 0%, ${team.color} 100%)`,
               }}
             >
               <div className="team-header">
@@ -80,7 +96,7 @@ const TeamScoreboard = () => {
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={{ duration: 1, delay: 0.5 }}
-                  style={{ background: team.gradient }}
+                  style={{ background: team.gradient || team.color }}
                 />
               </div>
 

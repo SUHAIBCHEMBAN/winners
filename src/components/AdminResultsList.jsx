@@ -1,14 +1,11 @@
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, Calendar, Award } from 'lucide-react';
 import useStore from '../store/useStore';
-import { programs } from '../data/programs';
-import { participants } from '../data/participants';
-import { teams } from '../data/teams';
 import { format } from 'date-fns';
 import './AdminResultsList.css';
 
 const AdminResultsList = ({ onEdit }) => {
-  const { results, deleteResult } = useStore();
+  const { results, deleteResult, programs, participants, teams } = useStore();
 
   const handleDelete = (id, participantName) => {
     if (
@@ -55,17 +52,17 @@ const AdminResultsList = ({ onEdit }) => {
               <div className="admin-result-content">
                 <div className="admin-result-main">
                   <div className="admin-result-participant">
-                    <h3>{participant?.name}</h3>
+                    <h3>{participant?.name || 'Unknown Participant'}</h3>
                     <span className="participant-details">
-                      {participant?.category} • {program?.name}
+                      {participant?.category} • {program?.name || 'Unknown Program'}
                     </span>
                   </div>
                   <div className="admin-result-meta">
                     <div
                       className="admin-team-badge"
-                      style={{ '--team-color': team?.color }}
+                      style={{ '--team-color': team?.color || '#999' }}
                     >
-                      {team?.name}
+                      {team?.name || 'Unknown Team'}
                     </div>
                     {result.place && <div className="admin-place-badge">{result.place}</div>}
                     <div className="admin-grade-badge">{result.grade}</div>

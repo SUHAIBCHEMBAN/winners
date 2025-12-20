@@ -1,28 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Professional Light Theme Palette */
-  --primary: #2563eb;
-  /* Royal Blue */
-  --primary-dark: #1e40af;
-  --primary-light: #eff6ff;
+  /* Sztuka '26 Theme Palette */
+  --primary: #6d28d9;
+  /* Deep Violet */
+  --primary-dark: #4c1d95;
+  /* Darker Violet */
+  --primary-light: #8b5cf6;
+  /* Light Violet */
 
-  --secondary: #475569;
-  /* Slate Gray */
-  --secondary-dark: #1e293b;
-  --secondary-light: #f1f5f9;
+  --secondary: #f59e0b;
+  /* Gold/Amber */
+  --secondary-dark: #d97706;
+  --secondary-light: #fbbf24;
 
   --accent: #f59e0b;
-  /* Amber for awards */
+  /* Gold for awards */
 
-  /* Team Colors - Softer for light theme */
+  /* Team Colors */
   --team1-color: #ef4444;
-  /* Red */
+  /* Keep Red or change to brand colors if specified */
   --team1-bg: #fef2f2;
   --team1-gradient: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
 
   --team2-color: #059669;
-  /* Emerald */
+  /* Keep Green */
   --team2-bg: #ecfdf5;
   --team2-gradient: linear-gradient(135deg, #10b981 0%, #047857 100%);
 

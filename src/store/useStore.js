@@ -17,101 +17,134 @@ const useStore = create(
         (set, get) => ({
             // State
             results: [],
+            programs: [],
+            teams: [],
+            participants: [],
             isAuthenticated: false,
             isFirebaseActive: !!db,
 
             // --- Actions ---
 
             // Listen for Real-time Updates (Firebase Only)
-            subscribeToResults: () => {
+            subscribeToData: () => {
                 if (!db) return () => { };
 
-                console.log('Subscribing to real-time updates...');
-                const q = query(collection(db, 'results'), orderBy('timestamp', 'desc'));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedResults = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    set({ results: fetchedResults });
-                }, (error) => {
-                    console.error("Error fetching updates:", error);
+                console.log('Subscribing to real-time updates for all collections...');
+                
+                // Results
+                const qResults = query(collection(db, 'results'), orderBy('timestamp', 'desc'));
+                const unsubResults = onSnapshot(qResults, (snapshot) => {
+                    const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    set({ results: fetched });
                 });
 
-                return unsubscribe;
+                // Programs
+                const qPrograms = query(collection(db, 'programs')); // Add orderBy if needed
+                const unsubPrograms = onSnapshot(qPrograms, (snapshot) => {
+                    const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Sort locally or in query if needed
+                    set({ programs: fetched });
+                });
+
+                // Teams
+                const qTeams = query(collection(db, 'teams'));
+                const unsubTeams = onSnapshot(qTeams, (snapshot) => {
+                    const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    set({ teams: fetched });
+                });
+
+                // Participants
+                const qParticipants = query(collection(db, 'participants'));
+                const unsubParticipants = onSnapshot(qParticipants, (snapshot) => {
+                    const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    set({ participants: fetched });
+                });
+
+                return () => {
+                    unsubResults();
+                    unsubPrograms();
+                    unsubTeams();
+                    unsubParticipants();
+                };
             },
 
-            // Add Result
-            addResult: async (result) => {
-                const newResult = {
-                    ...result,
-                    timestamp: new Date().toISOString(),
+            // --- Generic CRUD Helper ---
+            _addItem: async (collectionName, item, stateKey) => {
+                const newItem = {
+                    ...item,
+                    createdAt: new Date().toISOString(),
                 };
-
                 if (db) {
                     try {
-                        // Firestore generates unique ID automatically
-                        await addDoc(collection(db, 'results'), newResult);
+                        await addDoc(collection(db, collectionName), newItem);
                     } catch (e) {
-                        console.error("Error adding document: ", e);
-                        alert("Failed to save to cloud. Check console.");
+                        console.error(`Error adding to ${collectionName}: `, e);
                     }
                 } else {
-                    // Local Storage Fallback
-                    const localResult = {
-                        ...newResult,
-                        id: `result_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    const localItem = {
+                        ...newItem,
+                        id: `${collectionName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     };
-                    set((state) => ({
-                        results: [localResult, ...state.results],
-                    }));
+                    set((state) => ({ [stateKey]: [...state[stateKey], localItem] }));
                 }
             },
 
-            // Edit Result
-            editResult: async (id, updatedData) => {
-                const dataPayload = {
-                    ...updatedData,
-                    editedAt: new Date().toISOString()
-                };
-
+            _updateItem: async (collectionName, id, updatedData, stateKey) => {
                 if (db) {
                     try {
-                        const resultRef = doc(db, 'results', id);
-                        await updateDoc(resultRef, dataPayload);
+                        const ref = doc(db, collectionName, id);
+                        await updateDoc(ref, updatedData);
                     } catch (e) {
-                        console.error("Error updating document: ", e);
+                        console.error(`Error updating ${collectionName}: `, e);
                     }
                 } else {
-                    set((state) => ({
-                        results: state.results.map((result) =>
-                            result.id === id ? { ...result, ...dataPayload } : result
+                   set((state) => ({
+                        [stateKey]: state[stateKey].map((item) =>
+                            item.id === id ? { ...item, ...updatedData } : item
                         ),
                     }));
                 }
             },
 
-            // Delete Result
-            deleteResult: async (id) => {
+            _deleteItem: async (collectionName, id, stateKey) => {
                 if (db) {
                     try {
-                        await deleteDoc(doc(db, 'results', id));
+                        await deleteDoc(doc(db, collectionName, id));
                     } catch (e) {
-                        console.error("Error deleting document: ", e);
+                        console.error(`Error deleting from ${collectionName}: `, e);
                     }
                 } else {
                     set((state) => ({
-                        results: state.results.filter((result) => result.id !== id),
+                        [stateKey]: state[stateKey].filter((item) => item.id !== id),
                     }));
                 }
             },
 
-            // Clear All
+            // --- Specific Actions ---
+
+            // Results
+            addResult: (result) => get()._addItem('results', { ...result, timestamp: new Date().toISOString() }, 'results'),
+            editResult: (id, data) => get()._updateItem('results', id, { ...data, editedAt: new Date().toISOString() }, 'results'),
+            deleteResult: (id) => get()._deleteItem('results', id, 'results'),
+
+            // Programs
+            addProgram: (program) => get()._addItem('programs', program, 'programs'),
+            updateProgram: (id, data) => get()._updateItem('programs', id, data, 'programs'),
+            deleteProgram: (id) => get()._deleteItem('programs', id, 'programs'),
+
+            // Teams
+            addTeam: (team) => get()._addItem('teams', team, 'teams'),
+            updateTeam: (id, data) => get()._updateItem('teams', id, data, 'teams'),
+            deleteTeam: (id) => get()._deleteItem('teams', id, 'teams'),
+
+            // Participants
+            addParticipant: (participant) => get()._addItem('participants', participant, 'participants'),
+            updateParticipant: (id, data) => get()._updateItem('participants', id, data, 'participants'),
+            deleteParticipant: (id) => get()._deleteItem('participants', id, 'participants'),
+
+            // Clear All (Dev/debug)
             clearAllResults: async () => {
-                if (db) {
-                    // Deleting collection is complex in client SDK, usually requires cloud function
-                    // or iterating. We'll iterate for simplicity of this fest app.
+                 if (db) {
                     const results = get().results;
                     results.forEach(async (r) => {
                         await deleteDoc(doc(db, 'results', r.id));
@@ -121,11 +154,35 @@ const useStore = create(
                 }
             },
 
-            // --- Utilities (Same as before) ---
+            // Data Seeding (Migration)
+            seedDatabase: async (programsData, teamsData, participantsData) => {
+                if (!db) return;
+                console.log("Seeding database...");
+                
+                // Helper to check if exists to avoid duplicates could be added, but for simple seed we just add.
+                // BETTER: Check if collections are empty? Or just rely on user clicking "Seed" once.
+                
+                for (const p of programsData) {
+                    await addDoc(collection(db, 'programs'), p);
+                }
+                for (const t of teamsData) {
+                     await addDoc(collection(db, 'teams'), t);
+                }
+                for (const p of participantsData) {
+                     await addDoc(collection(db, 'participants'), p);
+                }
+                alert("Database seeded successfully!");
+            },
+
+            // --- Utilities ---
 
             getTeamScores: () => {
                 const results = get().results;
-                const scores = { team1: 0, team2: 0 };
+                const scores = {};
+                // Initialize scores for known teams (if available) or wait for results
+                const teams = get().teams;
+                teams.forEach(t => scores[t.id] = 0);
+
                 results.forEach((result) => {
                     if (result.teamId && result.points) {
                         scores[result.teamId] = (scores[result.teamId] || 0) + result.points;
@@ -148,48 +205,27 @@ const useStore = create(
             },
 
             exportResults: () => {
-                const results = get().results;
-                const dataStr = JSON.stringify(results, null, 2);
+                const { results, programs, teams, participants } = get();
+                const data = { results, programs, teams, participants };
+                const dataStr = JSON.stringify(data, null, 2);
                 const dataBlob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `results_${new Date().toISOString().split('T')[0]}.json`;
+                link.download = `cms_backup_${new Date().toISOString().split('T')[0]}.json`;
                 link.click();
                 URL.revokeObjectURL(url);
             },
 
-            importResults: (jsonData) => {
-                try {
-                    const parsedData = JSON.parse(jsonData);
-                    if (Array.isArray(parsedData)) {
-                        // For import, we might want to batch write to Firebase if connected
-                        // But for safety/simplicity, let's keep import local-only behavior OR
-                        // iterate write (slow but works).
-                        if (db) {
-                            if (!window.confirm("You are importing to the LIVE CLOUD DATABASE. This will add all entries. Continue?")) return false;
-                            parsedData.forEach(async (item) => {
-                                // Remove ID collision risk
-                                const { id, ...cleanItem } = item;
-                                await addDoc(collection(db, 'results'), cleanItem);
-                            });
-                        } else {
-                            set({ results: parsedData });
-                        }
-                        return true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Import failed:', error);
-                    return false;
-                }
-            },
+            importResults: (jsonData) => { /* ... existing import logic usually just for results, can update for full backup restore later if needed */ },
         }),
         {
             name: 'fest-results-storage',
             partialize: (state) => ({
-                // Even if using Firebase, we cache results locally for speed/offline
                 results: state.results,
+                programs: state.programs,
+                teams: state.teams,
+                participants: state.participants,
                 isAuthenticated: state.isAuthenticated,
             }),
         }

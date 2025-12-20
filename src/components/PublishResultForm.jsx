@@ -2,13 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Award } from 'lucide-react';
 import useStore from '../store/useStore';
-import { programs } from '../data/programs';
-import { participants } from '../data/participants';
-import { teams } from '../data/teams';
 import './PublishResultForm.css';
 
 const PublishResultForm = ({ editingResult, onClose }) => {
-  const { addResult, editResult } = useStore();
+  const { addResult, editResult, programs, teams, participants } = useStore();
   
   const [formData, setFormData] = useState({
     programId: '',
@@ -16,7 +13,7 @@ const PublishResultForm = ({ editingResult, onClose }) => {
     teamId: '',
     points: '',
     grade: '',
-    place: '', // Added place field
+    place: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -30,7 +27,7 @@ const PublishResultForm = ({ editingResult, onClose }) => {
         teamId: editingResult.teamId,
         points: editingResult.points,
         grade: editingResult.grade,
-        place: editingResult.place || '', // Load place if editing
+        place: editingResult.place || '',
       });
     }
   }, [editingResult]);
@@ -43,7 +40,7 @@ const PublishResultForm = ({ editingResult, onClose }) => {
         setFormData((prev) => ({ ...prev, teamId: participant.teamId }));
       }
     }
-  }, [formData.participantId]);
+  }, [formData.participantId, participants]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -56,7 +53,7 @@ const PublishResultForm = ({ editingResult, onClose }) => {
       newErrors.points = 'Points must be between 1 and 1000';
     }
     if (!formData.grade) newErrors.grade = 'Please select a grade';
-    if (!formData.place) newErrors.place = 'Please select a position'; // Validate place
+    if (!formData.place) newErrors.place = 'Please select a position';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -88,7 +85,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
     }
@@ -125,7 +121,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="publish-form">
-            {/* Program Selection */}
             <div className="input-group">
               <label className="input-label">Program *</label>
               <select
@@ -143,7 +138,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               {errors.programId && <span className="error-text">{errors.programId}</span>}
             </div>
 
-            {/* Participant Selection */}
             <div className="input-group">
               <label className="input-label">Participant *</label>
               <select
@@ -164,7 +158,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               {errors.participantId && <span className="error-text">{errors.participantId}</span>}
             </div>
 
-            {/* Points Input */}
             <div className="input-group">
               <label className="input-label">
                 Points * {selectedProgram && `(Max: ${selectedProgram.maxPoints})`}
@@ -181,7 +174,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               {errors.points && <span className="error-text">{errors.points}</span>}
             </div>
 
-            {/* Place/Position Selection */}
             <div className="input-group">
               <label className="input-label">Position / Place *</label>
               <select
@@ -198,7 +190,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               {errors.place && <span className="error-text">{errors.place}</span>}
             </div>
 
-            {/* Grade Selection */}
             <div className="input-group">
               <label className="input-label">Grade *</label>
               <select
@@ -218,7 +209,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               {errors.grade && <span className="error-text">{errors.grade}</span>}
             </div>
 
-            {/* Summary */}
             {selectedParticipant && selectedProgram && selectedTeam && (
               <motion.div
                 className="result-summary"
@@ -256,7 +246,6 @@ const PublishResultForm = ({ editingResult, onClose }) => {
               </motion.div>
             )}
 
-            {/* Form Actions */}
             <div className="form-actions">
               <button type="button" className="btn btn-outline" onClick={onClose}>
                 <X size={18} />

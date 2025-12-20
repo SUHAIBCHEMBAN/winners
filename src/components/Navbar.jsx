@@ -20,7 +20,7 @@ const Navbar = () => {
         <div className="navbar-content">
           <Link to="/" className="navbar-brand">
             <Trophy className="brand-icon" />
-            <span className="brand-text">FestResults</span>
+            <span className="brand-text">Sztuka '26</span>
           </Link>
           
           {/* Links hidden as per request - access admin via /admin URL */}

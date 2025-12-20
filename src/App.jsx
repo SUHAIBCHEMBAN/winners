@@ -7,14 +7,14 @@ import AdminPanel from './pages/AdminPanel';
 import useStore from './store/useStore';
 
 function App() {
-  const subscribeToResults = useStore((state) => state.subscribeToResults);
+  const subscribeToData = useStore((state) => state.subscribeToData);
 
   useEffect(() => {
     // Start listening to Firebase real-time updates
-    const unsubscribe = subscribeToResults();
+    const unsubscribe = subscribeToData();
     // Cleanup on unmount
     return () => unsubscribe();
-  }, [subscribeToResults]);
+  }, [subscribeToData]);
 
   return (
     <Router>
